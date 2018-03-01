@@ -1,5 +1,6 @@
 # esri-3d-android
 Showcase quartz 3D capabilities in ArcGIS SDK for Android
+
 **Note:** this is a **prototype** meant for demonstration purposes only. It is not meant for commercial use and it is not an Esri developer sample.
 
 **Usage Notes:**
