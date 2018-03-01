@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">Esri 3D [Prototype]</string>
+
+
+    <string name="permission_rationale_fine_location">This app needs permission in order to offer the option to zoom the display to your location.</string>
+    <string name="err_location_invalid">No location available; please try again a little later.</string>
+
+    <string name="distance_line_label">%1$.0f m, bearing %2$.0f°</string>
+
+    <string name="tb_btn_tap_measure">Measure</string>
+    <string name="tb_button_tapaction">Tap Action</string>
+    <string name="tb_btn_gpsloc">GPS Location</string>
+    <string name="tb_btn_layers">Layers</string>
+    <string name="tb_btn_bookmarks">Choose a bookmark</string>
+    <string name="activity_title_id_results">Identify Results</string>
+    <string name="tb_btn_tap_line_of_sight">Line of Sight</string>
+    <string name="tb_btn_tap_viewshed">Viewshed</string>
+    <string name="tb_btn_tap_sensor_navigation">Sensor Navigation</string>
+    <string name="tb_btn_tap_standard_navigation">Standard Navigation</string>
+    <string name="msg_no_bookmarks">There are no bookmarks in this scene.</string>
+    <string name="msg_no_webscenes">This user has no web scenes.</string>
+    <string name="unnamed_layer">[unnamed layer]</string>
+    <string name="tb_btn_open_webscene">Open…</string>
+    <string name="msg_invalid_portal_url">That Portal URL is invalid.</string>
+    <string name="dlg_title_portal_url">Enter portal URL:</string>
+    <string name="tb_btn_pivot_lock">Pivot Lock</string>
+    <string name="msg_start_pivot_mode">Tap or drag a point to start pivot mode.</string>
+    <string name="tb_btn_remove_graphics">Clear Results</string>
+    <string name="dlg_title_choose_webscene">Choose a web scene:</string>
+    <string name="err_portal_user_problem">You do not have permissions to access this resource or perform this operation.</string>
+    <string name="viewshed_dist_label">Viewshed distance: %1$d m</string>
+</resources>

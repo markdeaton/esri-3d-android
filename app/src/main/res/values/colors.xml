@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <color name="primaryColor">#2e7d32</color>
+  <color name="primaryLightColor">#60ad5e</color>
+  <color name="primaryDarkColor">#005005</color>
+  <color name="secondaryColor">#6d4c41</color>
+  <color name="secondaryLightColor">#9c786c</color>
+  <color name="secondaryDarkColor">#40241a</color>
+  <color name="primaryTextColor">#ffffff</color>
+  <color name="secondaryTextColor">#ffffff</color>
+  <color name="accentColor">#795548</color>
+  <color name="listAttrNameColor">#AAAAAA</color>
+  <color name="progressBarColor">#FFFFFF</color>
+  <color name="toolbarOverflowIconColor">#FFFFFF</color>
+  <color name="seekbarBGColor">#BBBBBBBB</color>
+</resources>

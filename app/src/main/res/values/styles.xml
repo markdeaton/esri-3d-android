@@ -1,0 +1,38 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/primaryColor</item>
+        <item name="colorPrimaryDark">@color/primaryDarkColor</item>
+        <item name="colorAccent">@color/accentColor</item>
+        <item name="android:textAppearanceListItem">@style/ListItemAttrName</item>
+        <item name="android:actionOverflowButtonStyle">@style/Toolbar.ActionOverflowButton</item>
+        <!-- Highlight toolbar menu items when pressed -->
+        <item name="android:dropDownListViewStyle">@style/Toolbar.ListItemStyle</item>
+        <item name="android:listViewStyle">@style/Toolbar.ListItemStyle</item>
+    </style>
+
+    <style name="ListItemAttrName" parent="@android:style/TextAppearance">
+        <item name="android:textColor">@android:color/darker_gray</item>
+        <item name="android:textStyle">italic</item>
+    </style>
+
+    <style name="ProgressBarStyle" parent="@android:style/Widget.ProgressBar">
+        <item name="android:color">@color/progressBarColor</item>
+        <item name="android:layout_gravity">center</item>
+    </style>
+
+    <style name="Toolbar.ActionOverflowButton" parent="Widget.AppCompat.ActionButton.Overflow">
+        <item name="android:tint">@color/toolbarOverflowIconColor</item>
+    </style>
+
+    <style name="Toolbar.TitleText" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
+        <item name="android:textColor">@color/primaryTextColor</item>
+        <item name="android:textSize">18sp</item>
+    </style>
+
+    <style name="Toolbar.ListItemStyle" parent="Base.Widget.AppCompat.Light.PopupMenu">
+        <item name="android:listSelector">@drawable/toolbar_popup_menu_item_background_color</item>
+    </style>
+</resources>

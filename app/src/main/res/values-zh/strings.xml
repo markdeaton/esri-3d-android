@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Esri三维(原型)</string>
+
+    <string name="permission_rationale_fine_location">该应用程序无法自动将显示缩放至您的位置。</string>
+    <string name="err_location_invalid">无可用位置；请稍后再试。</string>
+
+    <string name="activity_title_id_results">确定结果</string>
+    <string name="distance_line_label">%1$.0f 米，%2$.0f°</string>
+
+    <string name="tb_btn_tap_measure">测量</string>
+    <string name="tb_button_tapaction">点击操作</string>
+    <string name="tb_btn_gpsloc">GPS 位置</string>
+    <string name="tb_btn_layers">图层</string>
+    <string name="tb_btn_bookmarks">书签</string>
+    <string name="tb_btn_tap_line_of_sight">视线</string>
+    <string name="tb_btn_tap_viewshed">视域</string>
+
+    <string name="tb_btn_open_webscene">打开…</string>
+    <string name="tb_btn_tap_standard_navigation">标准导航</string>
+    <string name="msg_no_bookmarks">此场景中没有书签。</string>
+    <string name="msg_no_webscenes">该用户没有 web 场景。</string>
+    <string name="unnamed_layer">[未命名图层>]</string>
+    <string name="msg_invalid_portal_url">该门户 URL 无效。</string>
+    <string name="dlg_title_portal_url">输入门户地址</string>
+    <string name="tb_btn_tap_sensor_navigation">传感器导航</string>
+    <string name="tb_btn_pivot_lock">转轴锁定</string>
+    <string name="msg_start_pivot_mode">点击或拖动一个点开始转动</string>
+    <string name="tb_btn_remove_graphics">清除结果</string>
+    <string name="dlg_title_choose_webscene">选择场景</string>
+    <string name="err_portal_user_problem">你无权访问此资源或执行此操作。</string>
+
+    <string name="viewshed_dist_label">Viewshed distance: %1$d m</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Values that are used internally and don't need translation for display-->
+<resources>
+    <string name="default_portal_url" translatable="false">https://www.arcgis.com</string>
+    <string name="pref_viewshed_dist" translatable="false">pref_viewshed_dist</string>
+    <integer name="setting_initial_viewshed_dist_m">200</integer>
+    <integer name="geoanalysis_observer_height_m">2</integer>
+</resources>
