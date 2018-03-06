@@ -25,16 +25,7 @@ android {
     }
     flavorDimensions "default"
     productFlavors {
-        Beijing_benchmark {
-            buildConfigField("boolean", "IS_BEHIND_FIREWALL", "true")
-        }
         public_US {
-            buildConfigField("boolean", "IS_BEHIND_FIREWALL", "false")
-        }
-        DevSummit_2018 {
-            buildConfigField("boolean", "IS_BEHIND_FIREWALL", "false")
-        }
-        APL {
             buildConfigField("boolean", "IS_BEHIND_FIREWALL", "false")
         }
     }

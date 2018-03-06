@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/3d-exploration-android.iml" filepath="$PROJECT_DIR$/3d-exploration-android.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/esri-3d-android.iml" filepath="$PROJECT_DIR$/esri-3d-android.iml" />
     </modules>
   </component>
 </project>
