@@ -7,7 +7,7 @@ android {
 //    buildToolsVersion '27.0.3' - android Gradle plugin 3.0.0+ removes the need for this
     defaultConfig {
         applicationId "com.esri.apl.ea3d"
-        minSdkVersion 18
+        minSdkVersion 16
         targetSdkVersion 27
         versionCode 25
         versionName '1.9.3'

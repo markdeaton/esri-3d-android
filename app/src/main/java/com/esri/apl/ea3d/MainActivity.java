@@ -375,6 +375,7 @@ public class MainActivity extends AppCompatActivity {
     getMenuInflater().inflate(R.menu.action_bar, menu);
     mTBItems = menu;
 
+    if (mLocation != null) mTBItems.findItem(R.id.mnuGpsLoc).setVisible(true);
     return true;
   }
 
@@ -730,7 +731,7 @@ public class MainActivity extends AppCompatActivity {
       if (location != null) {
         mLocation = location;
         mLocationManager.removeUpdates(mLocationListener);
-        mTBItems.findItem(R.id.mnuGpsLoc).setVisible(true);
+        if (mTBItems != null) mTBItems.findItem(R.id.mnuGpsLoc).setVisible(true);
       }
     }
 

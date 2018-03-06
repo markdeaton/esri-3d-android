@@ -93,7 +93,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         android:background="@color/seekbarBGColor"
         android:layout_marginBottom="32dp"
-        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
         android:visibility="invisible">
 
         <android.support.v7.widget.AppCompatTextView
