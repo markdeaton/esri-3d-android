@@ -4,7 +4,8 @@ Showcase quartz 3D capabilities in ArcGIS SDK for Android
 **Note:** this is a **prototype** meant for demonstration purposes only. It is not meant for commercial use and it is not an Esri developer sample.
 
 **Updated for SDK 100.3.0**
-This app runs best on devices with 3 GB or more of RAM and OpenGL ES 3.0 or above.
+* This app runs best on devices with 3 GB or more of RAM and OpenGL ES 3.0 or above.
+* Now supports only devices running KitKat (Android 19) or above.
 
 **Usage Notes:**
 
