@@ -53,18 +53,14 @@ import com.esri.apl.ea3d.event.PivotLockTouchListener;
 import com.esri.apl.ea3d.event.SensorNavigationTouchListener;
 import com.esri.apl.ea3d.event.ViewshedTouchListener;
 import com.esri.apl.ea3d.model.Bookmark3D;
-import com.esri.apl.ea3d.util.CameraSerialization;
+import com.esri.apl.ea3d.util.MessageUtils;
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment;
 import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
-import com.esri.arcgisruntime.layers.ArcGISSceneLayer;
-import com.esri.arcgisruntime.layers.ArcGISTiledLayer;
 import com.esri.arcgisruntime.layers.Layer;
 import com.esri.arcgisruntime.loadable.LoadStatus;
 import com.esri.arcgisruntime.mapping.ArcGISScene;
-import com.esri.arcgisruntime.mapping.ArcGISTiledElevationSource;
-import com.esri.arcgisruntime.mapping.Basemap;
 import com.esri.arcgisruntime.mapping.Viewpoint;
 import com.esri.arcgisruntime.mapping.view.Camera;
 import com.esri.arcgisruntime.mapping.view.DefaultSceneViewOnTouchListener;
@@ -78,22 +74,14 @@ import com.esri.arcgisruntime.portal.PortalUser;
 import com.esri.arcgisruntime.portal.PortalUserContent;
 import com.esri.arcgisruntime.security.AuthenticationManager;
 import com.esri.arcgisruntime.security.DefaultAuthenticationChallengeHandler;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 import org.apache.commons.lang.StringUtils;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
@@ -112,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
   private Location mLocation;
 
   // layers
-  private List<Layer> mSceneLayers = new ArrayList<>(); // Scene layer, mesh, or feature layer
   private Portal mPortal;
 
   // bookmarks
@@ -127,6 +114,9 @@ public class MainActivity extends AppCompatActivity {
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    // Needed to prevent a crash on Pixel C tablet with very complex mesh scenes:
+    SceneView.setMemoryLimit(805306368); // 768 MB
+
     int iLicRes = getResources().getIdentifier("license_string_std", "string", getPackageName());
     if (iLicRes != 0) ArcGISRuntimeEnvironment.setLicense(getString(iLicRes));
     AuthenticationManager.CredentialCache.clear();
@@ -134,13 +124,13 @@ public class MainActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-    Toolbar actionBar = findViewById(R.id.action_bar);
+    Toolbar actionBar = (Toolbar) findViewById(R.id.action_bar);
     setSupportActionBar(actionBar);
 
     // create a scene
     ArcGISScene scene = new ArcGISScene();
 
-    mSceneView = findViewById(R.id.sceneView);
+    mSceneView = (SceneView) findViewById(R.id.sceneView);
     mSceneView.setScene(scene);
     mSceneView.addViewpointChangedListener(onViewpointChanged);
 
@@ -182,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
     mPivotLockTouchListener = new PivotLockTouchListener(mSceneView, this, btnPivotLock);
 
     // Add compass
-    mCompass = findViewById(R.id.compass);
+    mCompass = (AppCompatImageView) findViewById(R.id.compass);
     mCompass.setOnClickListener(onCompassClicked);
 
     // Start loading layers only if this build is meant to be run outside China's firewall
@@ -192,7 +182,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
           int iWebSceneId = getResources().getIdentifier("esri_webscene_id", "string", getPackageName());
-          if (iWebSceneId != 0) loadLayers(getString(iWebSceneId));
+          if (iWebSceneId != 0) {
+            loadWebscene(getString(iWebSceneId));
+          }
         }
       });
       mPortal.loadAsync();
@@ -234,141 +226,39 @@ public class MainActivity extends AppCompatActivity {
   public void setCompassVisibility(boolean bVisible) {
     mCompass.setVisibility(bVisible ? View.VISIBLE : View.INVISIBLE);
   }
-  /**
-   * extractBasemapLayers
-   * Given a JsonArray of basemap layers, returns the first found tiled layer for inclusion in the scene.
-   * <br/>
-   * <b>Note:</b> OpenStreetMap comes through as its own basemap type (not ArcGISTiledMapServiceLayer).
-   * @param aryLyrsJson GSON JsonArray of basemap layers from a WebScene item
-   * @return Basemap for inclusion in the scene
-   */
-  // TODO Remove this once the SDK supports web scenes
-  private Basemap extractBasemapLayers(JsonArray aryLyrsJson) {
-    Basemap basemap = null;
-    for (int i = 0; i < aryLyrsJson.size(); i++) {
-      JsonObject jLayer = aryLyrsJson.get(i).getAsJsonObject();
-      if (jLayer.get("layerType").getAsString().equals("ArcGISTiledMapServiceLayer")) {
-        String sUrl = jLayer.get("url").getAsString();
-        ArcGISTiledLayer tlyr = new ArcGISTiledLayer(sUrl);
-        basemap = new Basemap(tlyr);
-        break;
-      }
-    }
-    return basemap;
-  }
 
-  /**
-   * extractSceneLayers
-   * Given a JsonArray of layers, recursively extracts and returns the ArcGISSceneLayers inside it
-   * @param aryLyrsJson GSON JsonArray of layers from a WebScene item
-   * @return List of ArcGISSceneLayers found in the array
-   */
-  // TODO Remove this once the SDK supports web scenes
-  private List<Layer> extractSceneLayers(JsonArray aryLyrsJson) {
-    ArrayList<Layer> aryLayers = new ArrayList<>();
-    String url, name, id; float opacity; boolean visible;
-
-    for (int iLyr = 0; iLyr < aryLyrsJson.size(); iLyr++) {
-      JsonObject layerJson = aryLyrsJson.get(iLyr).getAsJsonObject();
-      String sLyrType = layerJson.get("layerType").getAsString();
-      switch (sLyrType) {
-        case "ArcGISSceneServiceLayer":
-        case "IntegratedMeshLayer":
-//        case "PointCloudLayer": // Not supported yet
-          url = layerJson.get("url").getAsString();
-          // Some layers evidently don't specify opacity
-          opacity = layerJson.has("opacity") ?
-              layerJson.get("opacity").getAsFloat() : 1.0f;
-          name = layerJson.get("title").getAsString();
-          visible = layerJson.get("visibility").getAsBoolean();
-          id = layerJson.get("id").getAsString();
-          ArcGISSceneLayer lyrScene = new ArcGISSceneLayer(url);
-          lyrScene.loadAsync();
-          lyrScene.setOpacity(opacity);
-          lyrScene.setVisible(visible);
-          lyrScene.setName(name);
-          lyrScene.setId(id);
-          aryLayers.add(lyrScene);
-          break;
-        case "GroupLayer":
-          List<Layer> arySubLayers = extractSceneLayers(layerJson.getAsJsonArray("layers"));
-          aryLayers.addAll(arySubLayers);
-      }
-    }
-    return aryLayers;
-  }
-
-  /**
-   * Parses the JSON for a specified web scene ID.
-   * @param sEsriWebsceneId The item ID for the desired web scene to parse and load
-   */
-  // TODO Remove this once the SDK supports web scenes
-  private void loadLayers(String sEsriWebsceneId) {
-    PortalItem webscene = new PortalItem(mPortal, sEsriWebsceneId);
-    final ListenableFuture<InputStream> listener = webscene.fetchDataAsync();
-    listener.addDoneListener(new Runnable() {
-      @Override
-      public void run() {
-        if (listener.isDone()) {
+  /** Load the specified webscene item, plus any other non-supported features (e.g. slides) */
+  private void loadWebscene(String sEsriWebsceneId) {
+    try {
+      PortalItem webSceneItem = new PortalItem(mPortal, sEsriWebsceneId);
+      ArcGISScene scene = new ArcGISScene(webSceneItem);
+      mSceneView.setScene(scene);
+      scene.loadAsync();
+      scene.addDoneLoadingListener(new Runnable() {
+        @Override
+        public void run() {
           try {
-            InputStream inStream = listener.get();
-            JsonParser jsonParser = new JsonParser();
-            JsonObject jsonItemData = (JsonObject)jsonParser.parse(new InputStreamReader(inStream, "UTF-8"));
-
-            // Get basemap layers; use the first one found
-            if (jsonItemData.getAsJsonObject("baseMap") != null) {
-              JsonObject jBasemap = jsonItemData.getAsJsonObject("baseMap");
-              if (jBasemap.getAsJsonArray("baseMapLayers") != null) {
-                JsonArray jBasemaps = jBasemap.getAsJsonArray("baseMapLayers");
-                Basemap basemap = extractBasemapLayers(jBasemaps);
-                if (basemap != null) mSceneView.getScene().setBasemap(basemap);
-              }
-              // Get elevation layers
-              if (jBasemap.getAsJsonArray("elevationLayers") != null) {
-                JsonArray aryElevLayers = jBasemap.getAsJsonArray("elevationLayers");
-                if (aryElevLayers.size() > 0) {
-                  mSceneView.getScene().getBaseSurface().getElevationSources().clear();
-                  for (JsonElement elevLayer : aryElevLayers) {
-                    JsonObject elevLyr = elevLayer.getAsJsonObject();
-                    if (elevLyr.get("layerType").getAsString().equals("ArcGISTiledElevationServiceLayer")) {
-                      String sUrl = elevLyr.get("url").getAsString();
-                      ArcGISTiledElevationSource elevSrc = new ArcGISTiledElevationSource(sUrl);
-                      mSceneView.getScene().getBaseSurface().getElevationSources().add(elevSrc);
-                    }
-                  }
-                }
-              }
-            }
-
-            // Get scene layers
-            JsonArray aryLayers = jsonItemData.getAsJsonArray("operationalLayers");
-            mSceneView.getScene().getOperationalLayers().clear();
-
-            mSceneLayers = extractSceneLayers(aryLayers);
-            for (Layer lyrScene : mSceneLayers)
-              mSceneView.getScene().getOperationalLayers().add(lyrScene);
             // Get slides
-            JsonArray arySlides = jsonItemData.getAsJsonObject("presentation").getAsJsonArray("slides");
+            Map<String, Object> unknownJsonObjs = scene.getUnsupportedJson();
+            Map<String, Object> presentation = (Map<String, Object>)unknownJsonObjs.get("presentation");
+            List<Object> slides = (List<Object>)presentation.get("slides");
             mBookmarks.clear();
-            for (int iSlide = 0; iSlide < arySlides.size(); iSlide++) {
-              JsonObject slideJson = arySlides.get(iSlide).getAsJsonObject();
-              Bookmark3D slide = new Bookmark3D(slideJson);
+            for (Object oSlide : slides) {
+              Bookmark3D slide = new Bookmark3D((Map<String, Object>) oSlide);
               mBookmarks.add(slide);
+              Log.d(TAG, "Created slide " + slide.get_title());
             }
-            // Get initial camera position
-            JsonObject jsonInitialCam = jsonItemData.getAsJsonObject("initialState")
-                .getAsJsonObject("viewpoint").getAsJsonObject("camera");
-            Camera initialCam = CameraSerialization.CameraFromJSON(jsonInitialCam);
-            mSceneView.setViewpointCameraAsync(initialCam, 3);
-          } catch (InterruptedException | ExecutionException | UnsupportedEncodingException e) {
-            Log.e(TAG, "Exception parsing webscene: " + e.getLocalizedMessage());
-            e.printStackTrace();
+          } catch (Exception e) {
+            MessageUtils.showToast(MainActivity.this, "Error loading webscene slides: "
+                    + e.getLocalizedMessage());
           }
-
         }
-      }
-    });
+      });
+    } catch (Exception e) {
+      MessageUtils.showToast(this, "Error loading webscene: " + e.getLocalizedMessage());
+    }
   }
+
 
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
@@ -488,10 +378,11 @@ public class MainActivity extends AppCompatActivity {
   private void showLayers() {
     AlertDialog.Builder adb = new AlertDialog.Builder(MainActivity.this);
 
-    String[] saLyrs = new String[mSceneLayers.size()];
-    boolean[] baLyrVis = new boolean[mSceneLayers.size()];
-    for (int iLyr = 0; iLyr < mSceneLayers.size(); iLyr++) {
-      Layer lyr = mSceneLayers.get(iLyr);
+    int iLayers = mSceneView.getScene().getOperationalLayers().size();
+    String[] saLyrs = new String[iLayers];
+    boolean[] baLyrVis = new boolean[iLayers];
+    for (int iLyr = 0; iLyr < iLayers; iLyr++) {
+      Layer lyr = mSceneView.getScene().getOperationalLayers().get(iLyr);
       saLyrs[iLyr] = lyr.getName() != null ? lyr.getName() : getString(R.string.unnamed_layer);
       baLyrVis[iLyr] = lyr.isVisible();
     }
@@ -604,7 +495,7 @@ public class MainActivity extends AppCompatActivity {
                           @Override
                           public void onClick(DialogInterface dialog, int which) {
                             PortalItem item = webscenes.get(which);
-                            loadLayers(item.getItemId());
+                            loadWebscene(item.getItemId());
                           }
                         };
                         new AlertDialog.Builder(MainActivity.this)
@@ -633,7 +524,7 @@ public class MainActivity extends AppCompatActivity {
   private DialogInterface.OnMultiChoiceClickListener onLayerToggled = new DialogInterface.OnMultiChoiceClickListener() {
     @Override
     public void onClick(DialogInterface dialogInterface, int i, boolean b) {
-      Layer lyr = mSceneLayers.get(i);
+      Layer lyr = mSceneView.getScene().getOperationalLayers().get(i);
       lyr.setVisible(b);
     }
   };
@@ -673,7 +564,7 @@ public class MainActivity extends AppCompatActivity {
   private void moveToBookmark(Bookmark3D bookmark) {
     if (bookmark != null) {
       // Set visible layers
-      for (Layer lyr : mSceneLayers) {
+      for (Layer lyr : mSceneView.getScene().getOperationalLayers()) {
         lyr.setVisible(bookmark.get_visibleLayerIds().contains(lyr.getId()));
       }
 
@@ -867,11 +758,7 @@ public class MainActivity extends AppCompatActivity {
                     .setPositiveButton(android.R.string.ok, null)
                     .create();
             dlg.show();*/
-            Toast toast = Toast.makeText(this,
-                StringUtils.join(permissionRationales, "\n\n"),
-                Toast.LENGTH_LONG);
-            toast.setGravity(Gravity.CENTER_VERTICAL, 0, 0);
-            toast.show();
+            MessageUtils.showToast(this, StringUtils.join(permissionRationales, "\n\n"));
           }
         }
         break;

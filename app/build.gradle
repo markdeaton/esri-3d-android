@@ -7,10 +7,10 @@ android {
 //    buildToolsVersion '27.0.3' - android Gradle plugin 3.0.0+ removes the need for this
     defaultConfig {
         applicationId "com.esri.apl.ea3d"
-        minSdkVersion 16
+        minSdkVersion 19
         targetSdkVersion 27
-        versionCode 25
-        versionName '1.9.3'
+        versionCode 26
+        versionName '2.0.0'
         vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
@@ -36,11 +36,11 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:27.0.2'
-    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.2'
     implementation 'org.apache.directory.studio:org.apache.commons.lang:2.6'
-    implementation 'com.google.code.gson:gson:2.8.2'
-    implementation 'com.esri.arcgisruntime:arcgis-android:100.2.1'
-    implementation 'com.android.support:design:27.0.2'
+    implementation 'com.google.code.gson:gson:2.8.4'
+    implementation 'com.esri.arcgisruntime:arcgis-android:100.3.0'
+    implementation 'com.android.support:design:27.1.1'
 }

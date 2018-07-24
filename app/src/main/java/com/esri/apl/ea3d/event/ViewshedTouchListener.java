@@ -19,7 +19,6 @@ import com.esri.arcgisruntime.mapping.view.Camera;
 import com.esri.arcgisruntime.mapping.view.DefaultSceneViewOnTouchListener;
 import com.esri.arcgisruntime.mapping.view.SceneView;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -38,15 +37,12 @@ public class ViewshedTouchListener extends DefaultSceneViewOnTouchListener imple
 
   private AnalysisOverlay mAnalyses = new AnalysisOverlay();
 
-  private LocationViewshed mLv1, mLv2, mLv3;
+  private LocationViewshed mLv1;
   private Point mViewshedPoint;
 
   /** Make a note of where we were when we zoomed into the viewshed result */
   private Camera mObserverCamera;
   private Camera mViewshedOriginCamera;
-
-  /** Listen to shared preferences changing when the user changes viewshed dist slider */
-  private SharedPreferences mPrefs;
 
   /** Is a viewshed calculation currently in progress? */
   private final static AtomicBoolean mCurrentlyProcessing = new AtomicBoolean(false);
@@ -69,12 +65,14 @@ public class ViewshedTouchListener extends DefaultSceneViewOnTouchListener imple
 
     this.mNavModeIndicator = navModeIndicator;
 
-    mPrefs = PreferenceManager.getDefaultSharedPreferences(mSceneView.getContext());
-    mPrefs.registerOnSharedPreferenceChangeListener(onPrefsChanged);
+    /* Listen to shared preferences changing when the user changes viewshed dist slider */
+    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mSceneView.getContext());
+    prefs.registerOnSharedPreferenceChangeListener(onPrefsChanged);
   }
 
   @Override
   public boolean onSingleTapConfirmed(MotionEvent motionEvent) {
+    Log.d(TAG, "onSingleTapConfirmed");
     findViewshedsFromScreenPoint(motionEvent);
     return true;
   }
@@ -91,35 +89,17 @@ public class ViewshedTouchListener extends DefaultSceneViewOnTouchListener imple
         .getInteger(R.integer.geoanalysis_observer_height_m);
 
     final ListenableFuture<Point> lfDone = mSceneView.screenToLocationAsync(screenPoint);
-    lfDone.addDoneListener(new Runnable() {
-      @Override
-      public void run() {
-        if (lfDone.isDone()) {
-          try {
-            final Point pt = lfDone.get();
-            final ListenableFuture<Double> lfElev =
-                mSceneView.getScene().getBaseSurface().getElevationAsync(pt);
-            lfElev.addDoneListener(new Runnable() {
-              @Override
-              public void run() {
-                if (lfElev.isDone()) {
-                  try {
-                    double dElev = lfElev.get() + observerHeight; // Add two meters for observer eye
-                    mViewshedPoint = new Point(pt.getX(), pt.getY(), dElev, pt.getSpatialReference());
-                    // Start the second part of the analysis now that we know where on earth they tapped
-                    computeViewshedsFromGeoPoint(mSceneView.getContext());
-                  } catch (InterruptedException e) {
-                    e.printStackTrace();
-                  } catch (ExecutionException e) {
-                    e.printStackTrace();
-                  }
-                }
-              }
-            });
-          } catch (Exception exc) {
-            Log.e(TAG, "Exception: " + exc.getMessage());
-            exc.printStackTrace();
-          }
+    lfDone.addDoneListener(() -> {
+      if (lfDone.isDone()) {
+        try {
+          final Point pt = lfDone.get();
+          mViewshedPoint = new Point(pt.getX(), pt.getY(), pt.getZ() + observerHeight,
+                  pt.getSpatialReference());
+          // Start the second part of the analysis now that we know where on earth they tapped
+          computeViewshedsFromGeoPoint();
+        } catch (Exception exc) {
+          Log.e(TAG, "Exception: " + exc.getMessage());
+          exc.printStackTrace();
         }
       }
     });
@@ -128,7 +108,9 @@ public class ViewshedTouchListener extends DefaultSceneViewOnTouchListener imple
   /** Perform the viewshed analyses. There are three to make a complete circle.
    * <b>Note:</b> Don't create a new analysis for each tap; reuse the old ones where possible.
    */
-  private void computeViewshedsFromGeoPoint(Context ctx) {
+  private void computeViewshedsFromGeoPoint() {
+    Context ctx = mSceneView.getContext();
+
     // If analysis size stored in prefs, use it; otherwise use the default
     int iDist = PreferenceManager.getDefaultSharedPreferences(ctx)
         .getInt(ctx.getString(R.string.pref_viewshed_dist),
@@ -141,29 +123,16 @@ public class ViewshedTouchListener extends DefaultSceneViewOnTouchListener imple
       // Currently each viewshed is restricted to a 120-degree angle, so do three for
       // a complete circle.
       if (mLv1 == null) {
-        mLv1 = new LocationViewshed(mViewshedPoint, 0, 90, 120, 120, 0, iDist);
+        mLv1 = new LocationViewshed(mViewshedPoint, 0, 90, 360, 120, 0, iDist);
       }
       else {
         mLv1.setLocation(mViewshedPoint);
         mLv1.setMaxDistance(iDist);
       }
-      if (!mAnalyses.getAnalyses().contains(mLv1)) mAnalyses.getAnalyses().add(mLv1);
-      if (mLv2 == null) {
-        mLv2 = new LocationViewshed(mViewshedPoint, 120, 90, 120, 120, 0, iDist);
+      if (!mAnalyses.getAnalyses().contains(mLv1)) {
+        mAnalyses.getAnalyses().add(mLv1);
+        Log.d(TAG, "added analysis overlay");
       }
-      else {
-        mLv2.setLocation(mViewshedPoint);
-        mLv2.setMaxDistance(iDist);
-      }
-      if (!mAnalyses.getAnalyses().contains(mLv2)) mAnalyses.getAnalyses().add(mLv2);
-      if (mLv3 == null) {
-        mLv3 = new LocationViewshed(mViewshedPoint, 240, 90, 120, 120, 0, iDist);
-      }
-      else {
-        mLv3.setLocation(mViewshedPoint);
-        mLv3.setMaxDistance(iDist);
-      }
-      if (!mAnalyses.getAnalyses().contains(mLv3)) mAnalyses.getAnalyses().add(mLv3);
 
       mViewshedOriginCamera = new Camera(mViewshedPoint, mSceneView.getCurrentViewpointCamera().getHeading(), 100, 0);
       mBtnReturnToCamera.setVisibility(View.INVISIBLE);
@@ -173,8 +142,9 @@ public class ViewshedTouchListener extends DefaultSceneViewOnTouchListener imple
       exc.printStackTrace();
     } catch (Exception exc) {
       Log.e(TAG, "Exception: " + exc.getMessage());
+    } finally {
+      mCurrentlyProcessing.set(false);
     }
-    mCurrentlyProcessing.set(false);
   }
 
   /** Dragging should also create a new viewshed analysis for an interactive rolling effect */
@@ -182,9 +152,10 @@ public class ViewshedTouchListener extends DefaultSceneViewOnTouchListener imple
   public boolean onScroll(MotionEvent motionEventFrom, MotionEvent motionEventTo, float distanceX, float distanceY) {
     Log.d(TAG, "Scroll");
     if (!mCurrentlyProcessing.get()) {
+      // Pan mode? Pan the view.
       if (get_panEnabled())
         super.onScroll(motionEventFrom, motionEventTo, distanceX, distanceY);
-      else
+      else // Viewshed mode? Create new viewsheds.
         findViewshedsFromScreenPoint(motionEventTo);
     }
     return true;
@@ -237,12 +208,12 @@ public class ViewshedTouchListener extends DefaultSceneViewOnTouchListener imple
   private SharedPreferences.OnSharedPreferenceChangeListener onPrefsChanged = new SharedPreferences.OnSharedPreferenceChangeListener() {
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
-      // Make sure it was the viewshed pref that changed and that there exists an analysis point
       Context ctx = mSceneView.getContext();
 
+      // Make sure it was the viewshed pref that changed and that there exists an analysis point
       if  (s.equals(ctx.getString(R.string.pref_viewshed_dist))
-        &&(mViewshedPoint != null)) {
-        computeViewshedsFromGeoPoint(ctx);
+        && mViewshedPoint != null) {
+        computeViewshedsFromGeoPoint();
         Log.d(TAG, ctx.getString(R.string.viewshed_dist_label,
             sharedPreferences.getInt(
                 s, ctx.getResources().getInteger(R.integer.setting_initial_viewshed_dist_m))));
@@ -254,7 +225,7 @@ public class ViewshedTouchListener extends DefaultSceneViewOnTouchListener imple
   @Override
   public void cleanup() {
     mAnalyses.getAnalyses().clear();
-    mLv1 = mLv2 = mLv3 = null;
+    mLv1 = null;
     mBtnReturnToCamera.setVisibility(View.INVISIBLE);
     mBtnZoomToViewshed.setVisibility(View.INVISIBLE);
   }
