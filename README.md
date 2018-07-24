@@ -3,6 +3,9 @@ Showcase quartz 3D capabilities in ArcGIS SDK for Android
 
 **Note:** this is a **prototype** meant for demonstration purposes only. It is not meant for commercial use and it is not an Esri developer sample.
 
+**Updated for SDK 100.3.0**
+This app runs best on devices with 3 GB or more of RAM and OpenGL ES 3.0 or above.
+
 **Usage Notes:**
 
 1. The "Open" function lets you specify a portal URL and account credentials. But it will only show the list of Web Scenes owned/created by that account--it won't show Web Scenes created by another account but which are allowed to be viewed by the signed-in account. **Upshot:** Plan to view only Web Scenes owned by the account you'll be signing in with.
