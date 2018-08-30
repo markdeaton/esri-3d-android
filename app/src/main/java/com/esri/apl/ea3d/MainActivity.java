@@ -238,6 +238,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
           try {
+            mSceneView.setViewpointCameraAsync(scene.getInitialViewpoint().getCamera(), 4f);
             // Get slides
             Map<String, Object> unknownJsonObjs = scene.getUnsupportedJson();
             Map<String, Object> presentation = (Map<String, Object>)unknownJsonObjs.get("presentation");
